@@ -21,6 +21,7 @@ import { StaffPanel } from './components/StaffPanel';
 import { StationRegistrationScreen } from './components/StationRegistrationScreen';
 import { SubscriptionLockScreen } from './components/SubscriptionLockScreen';
 import { OwnerPasswordModal } from './components/OwnerPasswordModal';
+import { AdminDashboard } from './components/AdminDashboard';
 import { storage } from './services/storage';
 import {
   PumpSettings,
@@ -346,6 +347,20 @@ export default function App() {
                 onOpenUpgradeModal={() => setShowSubscriptionModal(true)}
                 onOpenRegisterPumpModal={() => setShowPumpRegistrationModal(true)}
                 onRefreshData={refreshData}
+              />
+            )}
+
+            {currentTab === 'admin' && (
+              <AdminDashboard
+                registeredPumps={registeredPumps}
+                settings={settings}
+                onRefreshData={refreshData}
+                onNavigateToPump={(pumpId) => {
+                  storage.switchActivePump(pumpId);
+                  refreshData();
+                  setCurrentTab('dashboard');
+                }}
+                onReopenRegistration={() => setIsRegistered(false)}
               />
             )}
 

@@ -253,11 +253,11 @@ export interface SubscriptionInvoice {
 export interface PumpSubscription {
   id: string;
   planName: string; // "PumpTally Multi-Pump Commercial"
-  pricePerPumpMonthly: number; // 999
-  pricePerPumpAnnual: number; // 9990
+  pricePerPumpMonthly: number; // 499 (Special Launch Offer, regular 999)
+  pricePerPumpAnnual: number; // 4990
   activePumpsCount: number; // e.g. 2
-  totalMonthlyAmount: number; // activePumpsCount * 999 (e.g. 1998)
-  totalAnnualAmount: number; // activePumpsCount * 9990
+  totalMonthlyAmount: number; // activePumpsCount * 499
+  totalAnnualAmount: number; // activePumpsCount * 4990
   currencySymbol: string; // "₹"
   billingCycle: BillingCycle;
   status: SubscriptionStatus;
@@ -374,6 +374,71 @@ export interface DailyDensityRecord {
   recordedBy: string;
   remarks?: string;
   timestamp: number;
+}
+
+// Cashfree Payment Gateway Integration Types
+export interface CashfreeOrderPayload {
+  orderAmount: number;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  pumpIds: string[];
+  billingCycle: 'monthly' | 'annual';
+  planName: string;
+  returnUrl?: string;
+}
+
+export interface CashfreeOrderResult {
+  success: boolean;
+  orderId: string;
+  orderAmount: number;
+  orderCurrency: string;
+  paymentSessionId: string;
+  orderStatus: string;
+  environment: 'production' | 'sandbox';
+  appId: string;
+  cfOrder?: any;
+  error?: string;
+}
+
+export interface CashfreeVerifyResult {
+  success: boolean;
+  orderId: string;
+  orderStatus: string; // 'PAID' | 'ACTIVE' | 'EXPIRED' | etc.
+  paymentTime?: string;
+  paymentAmount?: number;
+  transactionId?: string;
+  message?: string;
+}
+
+// Admin Panel & Monthly Analytics Types
+export interface MonthlyVolumeRecord {
+  month: string; // "YYYY-MM" or "Oct 2026"
+  fuelVolumeLiters: number;
+  fuelSalesAmount: number;
+  lubeSalesAmount: number;
+  totalGrossTurnover: number;
+  transactionCount: number;
+  activeStations: number;
+  subscriptionRevenue: number;
+}
+
+export interface AdminAnalyticsData {
+  totalRegisteredPumps: number;
+  activePumpsCount: number;
+  trialPumpsCount: number;
+  expiredPumpsCount: number;
+  monthlySubscriptionRevenue: number; // e.g. active * 499
+  annualProjectedRevenue: number;
+  currentMonthVolumeLiters: number;
+  currentMonthGrossTurnover: number;
+  currentMonthTransactions: number;
+  oilCompanyDistribution: { company: string; count: number; percentage: number }[];
+  stateDistribution: { state: string; count: number }[];
+  monthlyTrends: MonthlyVolumeRecord[];
+  allStations: RegisteredPump[];
+  lastUpdated: string;
 }
 
 

@@ -47,6 +47,44 @@ export const SubscriptionDashboard: React.FC<SubscriptionDashboardProps> = ({
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Special Offer for New Customers Banner */}
+      <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-rose-500/20 border-2 border-orange-500/40 relative overflow-hidden shadow-xl shadow-orange-500/10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-orange-500 text-white font-black text-sm flex-shrink-0 shadow-lg">
+              50% OFF
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-black text-white tracking-wide">
+                  🔥 SPECIAL OFFER FOR NEW CUSTOMERS
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] bg-amber-400 text-slate-900 font-black uppercase">
+                  Cashfree Launch Deal
+                </span>
+              </div>
+              <p className="text-xs text-amber-200/90 mt-0.5">
+                প্ৰতিটো পেট্ৰ’ল পাম্পৰ ডিজিটেল পৰিচালনাৰ বাবে মাত্ৰ <strong className="text-white">₹৪৯৯/মাহে</strong> (নিয়মীয়া মূল্য ₹৯৯৯/মাহে)। Instant Cashfree Payment Gateway এক্টিভেশ্যন!
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="text-right">
+              <span className="text-xs text-slate-400 line-through block">নিয়মীয়া ₹৯৯৯/মাহে</span>
+              <span className="text-base font-mono font-black text-amber-400">
+                মাত্ৰ ₹৪৯৯ / পাম্প / মাহে
+              </span>
+            </div>
+            <button
+              onClick={onOpenUpgradeModal}
+              className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-black shadow-md cursor-pointer transition"
+            >
+              Claim Offer
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Top Banner */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -59,7 +97,7 @@ export const SubscriptionDashboard: React.FC<SubscriptionDashboardProps> = ({
             </h1>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            প্ৰতি মাহে মাত্ৰ ₹৯৯৯ ত আপোনাৰ পেট্ৰ’ল পাম্পৰ ডিজিটেল পৰিচালনা, নজল ৰিডিং, মবিল আৰু বাকী খাতা ব্যৱস্থাপনা।
+            প্ৰতি মাহে মাত্ৰ ₹৪৯৯ ত আপোনাৰ পেট্ৰ’ল পাম্পৰ ডিজিটেল পৰিচালনা, নজল ৰিডিং, মবিল আৰু বাকী খাতা ব্যৱস্থাপনা (Regular ₹৯৯৯)।
           </p>
         </div>
 
@@ -91,7 +129,7 @@ export const SubscriptionDashboard: React.FC<SubscriptionDashboardProps> = ({
             className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 active:scale-95 transition cursor-pointer"
           >
             <Zap className="w-4 h-4 fill-current" />
-            <span>Renew Plan ({sym}{subscription.totalMonthlyAmount}/mo for {registeredPumps.length} Pumps)</span>
+            <span>Renew Plan ({sym}{registeredPumps.length * 499}/mo for {registeredPumps.length} Pumps)</span>
           </button>
         </div>
       </div>
@@ -169,7 +207,7 @@ export const SubscriptionDashboard: React.FC<SubscriptionDashboardProps> = ({
                   <span className="text-xs text-slate-400 font-semibold font-sans"> / month</span>
                 </div>
                 <span className="text-xs text-slate-300 font-bold block mt-0.5">
-                  {registeredPumps.length} Stations &times; {sym}999 / pump / month
+                  {registeredPumps.length} Stations &times; {sym}499 / pump / month (Special Offer)
                 </span>
                 <span className="text-xs text-slate-400 block mt-1">
                   Next Renewal Date:{' '}
@@ -187,10 +225,10 @@ export const SubscriptionDashboard: React.FC<SubscriptionDashboardProps> = ({
                 <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">
                   Price Per Station
                 </span>
-                <div className="text-lg font-black text-white font-mono">
-                  {sym}999 / Station / Mo
+                <div className="text-lg font-black text-amber-400 font-mono">
+                  {sym}499 / Station / Mo
                 </div>
-                <span className="text-[10px] text-slate-500">Adds ₹999 for each extra pump</span>
+                <span className="text-[10px] text-emerald-400 font-bold">50% Discount (Reg. ₹999)</span>
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-800 space-y-1">

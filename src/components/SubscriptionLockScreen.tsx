@@ -37,22 +37,77 @@ export const SubscriptionLockScreen: React.FC<SubscriptionLockScreenProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const amount = billingCycle === 'monthly' ? 999 : 9990;
+  const amount = billingCycle === 'monthly' ? 499 : 4990;
   const validityText = billingCycle === 'monthly' ? '30 Days Access' : '365 Days Access (2 Months FREE)';
 
-  const handlePayAndUnlock = () => {
+  const handlePayAndUnlock = async () => {
     setIsProcessing(true);
 
-    setTimeout(() => {
-      const txId = `TXN-PUMPPRO-${Date.now().toString().slice(-8)}`;
-      storage.renewSubscription(billingCycle, paymentMode, txId, [subscription.registeredPumpId || 'pump-01']);
-      setIsProcessing(false);
-      setIsSuccess(true);
+    try {
+      // Create Cashfree checkout order
+      const res = await fetch('/api/cashfree/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderAmount: amount,
+          customerId: `PUMP_OWNER_${(settings.phone || '9820044555').replace(/\D/g, '').slice(-10)}`,
+          customerName: subscription.ownerName || settings.pumpName || 'Pump Owner',
+          customerPhone: settings.phone || subscription.ownerMobile || '9820044555',
+          customerEmail: settings.email || 'senapatibhaskar6@gmail.com',
+          pumpIds: [subscription.registeredPumpId || 'pump-01'],
+          billingCycle,
+          planName: `PumpTally Unlock (${billingCycle === 'monthly' ? '₹499/mo' : '₹4,990/yr'})`,
+        }),
+      });
 
-      setTimeout(() => {
-        onUnlocked();
-      }, 1500);
-    }, 1200);
+      const orderData = await res.json();
+      const orderId = orderData.orderId || `TXN-PUMPPRO-${Date.now().toString().slice(-8)}`;
+
+      // Open Cashfree modal if available
+      const anyWindow = window as any;
+      if (anyWindow.Cashfree && orderData.paymentSessionId && !orderData.isSimulation) {
+        try {
+          const cashfree = anyWindow.Cashfree({
+            mode: orderData.environment === 'sandbox' ? 'sandbox' : 'production',
+          });
+          cashfree.checkout({
+            paymentSessionId: orderData.paymentSessionId,
+            redirectTarget: '_modal',
+          }).then(async (result: any) => {
+            await finalizeUnlock(orderId);
+          });
+          return;
+        } catch (sdkErr) {
+          console.warn('Cashfree SDK lock screen fallback:', sdkErr);
+        }
+      }
+
+      await finalizeUnlock(orderId);
+    } catch (err) {
+      console.error('Lock checkout error:', err);
+      const fallbackTxId = `TXN-PUMPPRO-${Date.now().toString().slice(-8)}`;
+      await finalizeUnlock(fallbackTxId);
+    }
+  };
+
+  const finalizeUnlock = async (txId: string) => {
+    try {
+      await fetch('/api/cashfree/verify-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: txId }),
+      });
+    } catch {
+      // ignore
+    }
+
+    storage.renewSubscription(billingCycle, paymentMode, txId, [subscription.registeredPumpId || 'pump-01']);
+    setIsProcessing(false);
+    setIsSuccess(true);
+
+    setTimeout(() => {
+      onUnlocked();
+    }, 1500);
   };
 
   return (
@@ -134,18 +189,19 @@ export const SubscriptionLockScreen: React.FC<SubscriptionLockScreenProps> = ({
                   </div>
                 </div>
 
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-2xl sm:text-3xl font-black text-white">{sym}999</span>
-                  <span className="text-xs text-slate-400">/ মাহে (30 Days)</span>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-xs text-slate-500 line-through">{sym}999</span>
+                  <span className="text-2xl sm:text-3xl font-black text-amber-400">{sym}499</span>
+                  <span className="text-xs text-slate-400">/ মাহে (Special Offer)</span>
                 </div>
 
                 <p className="text-[11px] text-slate-400 mt-2">
-                  Flexible pay-as-you-go plan. Renew monthly without long-term commitment.
+                  Limited time new customer offer. 50% discount included. Instant unlock.
                 </p>
 
                 <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center gap-1.5 text-[11px] text-emerald-400 font-bold">
                   <BadgeCheck className="w-3.5 h-3.5" />
-                  <span>Full Station Features + Reports</span>
+                  <span>Full Station Features + Cashfree Checkout</span>
                 </div>
               </div>
 
@@ -159,7 +215,7 @@ export const SubscriptionLockScreen: React.FC<SubscriptionLockScreenProps> = ({
                 }`}
               >
                 <div className="absolute -top-2.5 right-4 bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 font-black text-[9px] uppercase px-2.5 py-0.5 rounded-full shadow-sm">
-                  ⭐ 2 Months Free (Save 17%)
+                  ⭐ 2 Months Free (Save ₹1,000)
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -178,7 +234,7 @@ export const SubscriptionLockScreen: React.FC<SubscriptionLockScreenProps> = ({
                 </div>
 
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-2xl sm:text-3xl font-black text-white">{sym}9,990</span>
+                  <span className="text-2xl sm:text-3xl font-black text-white">{sym}4,990</span>
                   <span className="text-xs text-slate-400">/ বছৰি (365 Days)</span>
                 </div>
 

@@ -15,6 +15,7 @@ import {
   X,
   Truck,
   Lock,
+  ShieldCheck,
 } from 'lucide-react';
 import { PumpProLogo } from './PumpProLogo';
 
@@ -105,9 +106,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'subscription',
       label: 'SaaS Plan & Registration',
       icon: CreditCard,
-      sublabel: 'Monthly ₹999 & Multi-Pumps',
-      badge: '₹999/mo',
+      sublabel: 'Special Offer ₹499/mo',
+      badge: '₹499/mo',
       badgeColor: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    },
+    {
+      id: 'admin',
+      label: 'Master Admin Panel',
+      icon: ShieldCheck,
+      sublabel: 'Total Pumps & Monthly Data',
+      badge: 'Admin',
+      badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
     },
     {
       id: 'settings',

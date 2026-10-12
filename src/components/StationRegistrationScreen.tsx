@@ -953,12 +953,13 @@ export const StationRegistrationScreen: React.FC<StationRegistrationScreenProps>
                       {billingCycle === 'monthly' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                     </div>
                   </div>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-xl font-black text-white">₹999</span>
-                    <span className="text-[11px] text-slate-400">/ মাহে (After Trial)</span>
+                  <div className="mt-1 flex items-baseline gap-1.5">
+                    <span className="text-xs text-slate-500 line-through">₹999</span>
+                    <span className="text-xl font-black text-amber-400">₹499</span>
+                    <span className="text-[11px] text-slate-400">/ মাহে (Special Offer)</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    Standard monthly plan. Auto-locks after 30 days if not renewed at ₹999/month.
+                  <p className="text-[10px] text-emerald-400 mt-1 font-bold">
+                    🔥 50% New Customer Discount. Auto-locks after 30 days trial if not renewed at ₹499/mo.
                   </p>
                 </div>
 
@@ -974,7 +975,7 @@ export const StationRegistrationScreen: React.FC<StationRegistrationScreenProps>
                   }`}
                 >
                   <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 font-black text-[9px] uppercase px-2 py-0.5 rounded-full">
-                    ⭐ Save 17% (2 Mo Free)
+                    ⭐ Save 2 Months Free
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black uppercase text-sky-400">বাৰ্ষিক • Annual</span>
@@ -987,7 +988,7 @@ export const StationRegistrationScreen: React.FC<StationRegistrationScreenProps>
                     </div>
                   </div>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-xl font-black text-white">₹9,990</span>
+                    <span className="text-xl font-black text-white">₹4,990</span>
                     <span className="text-[11px] text-slate-400">/ বছৰি (After Trial)</span>
                   </div>
                   <p className="text-[10px] text-slate-400 mt-1">
@@ -1051,12 +1052,12 @@ export const StationRegistrationScreen: React.FC<StationRegistrationScreenProps>
                       <QrCode className="w-7 h-7 text-slate-950" />
                     </div>
                     <div>
-                      <div className="font-bold text-white">Dynamic UPI QR Code</div>
+                      <div className="font-bold text-white">Dynamic UPI QR Code (Cashfree Gateway)</div>
                       <div className="text-[10px] text-slate-400">PhonePe • GPay • Paytm • BHIM</div>
                     </div>
                   </div>
-                  <span className="font-mono font-black text-orange-400 text-sm">
-                    ₹{billingCycle === 'monthly' ? '999' : '9,990'}
+                  <span className="font-mono font-black text-amber-400 text-sm">
+                    ₹{billingCycle === 'monthly' ? '499' : '4,990'}
                   </span>
                 </div>
               )}

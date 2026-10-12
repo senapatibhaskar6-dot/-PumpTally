@@ -617,15 +617,15 @@ export const DEFAULT_EXPENSES: ExpenseRecord[] = [
   },
 ];
 
-// Default SaaS Subscription Plan (Monthly ₹999 per pump)
+// Default SaaS Subscription Plan (Monthly ₹499 per pump - Special Launch Offer)
 export const DEFAULT_SUBSCRIPTION: PumpSubscription = {
   id: 'sub-pumptally-001',
-  planName: 'PumpTally Multi-Pump Commercial Pro',
-  pricePerPumpMonthly: 999,
-  pricePerPumpAnnual: 9990,
-  activePumpsCount: 2, // 2 default stations
-  totalMonthlyAmount: 1998, // 2 x ₹999 = ₹1,998
-  totalAnnualAmount: 19980, // 2 x ₹9,990 = ₹19,980
+  planName: 'PumpTally Commercial Pro (Special Launch Offer)',
+  pricePerPumpMonthly: 499,
+  pricePerPumpAnnual: 4990,
+  activePumpsCount: 1,
+  totalMonthlyAmount: 499,
+  totalAnnualAmount: 4990,
   currencySymbol: '₹',
   billingCycle: 'monthly',
   status: 'Active',
@@ -635,27 +635,27 @@ export const DEFAULT_SUBSCRIPTION: PumpSubscription = {
   daysRemaining: 28,
   isTrial: false,
   autoRenew: true,
-  licensedPumpIds: ['pump-01', 'pump-02'],
+  licensedPumpIds: ['pump-01'],
   registeredPumpId: 'pump-01',
   pumpName: 'Highway Star Energy & Fuel Station',
   ownerName: 'Bhaskar Senapati',
   ownerMobile: '+91 98200 44555',
   lastPaymentDate: '2026-10-01',
-  lastPaymentAmount: 1998,
+  lastPaymentAmount: 499,
   invoices: [
     {
       id: 'inv-sub-1001',
       invoiceNumber: 'PUMPTALLY-INV-2026-1001',
       date: '2026-10-01',
-      amount: 1998,
-      planName: 'PumpTally Commercial Pro (2 Stations @ ₹999/pump/mo)',
+      amount: 499,
+      planName: 'PumpTally Commercial Pro (Special Offer @ ₹499/mo)',
       billingPeriod: '01 Oct 2026 - 03 Nov 2026',
       paymentMode: 'UPI / QR',
-      transactionId: 'UPI-RAZOR-9948210344',
+      transactionId: 'CF-TXN-14600761',
       status: 'Paid',
-      taxAmount: 304.76, // 18% GST component included
-      pumpsCount: 2,
-      ratePerPump: 999,
+      taxAmount: 76.12, // 18% GST component included
+      pumpsCount: 1,
+      ratePerPump: 499,
     },
   ],
 };
@@ -1602,12 +1602,12 @@ class StorageService {
     const trialSub: PumpSubscription = {
       ...current,
       id: `sub-${Date.now()}`,
-      planName: 'PumpTally 30-Day Free Trial (Full Commercial Access)',
-      pricePerPumpMonthly: 999,
-      pricePerPumpAnnual: 9990,
+      planName: 'PumpTally 30-Day Free Trial (Special Launch Offer)',
+      pricePerPumpMonthly: 499,
+      pricePerPumpAnnual: 4990,
       activePumpsCount: 1,
-      totalMonthlyAmount: 999,
-      totalAnnualAmount: 9990,
+      totalMonthlyAmount: 499,
+      totalAnnualAmount: 4990,
       currencySymbol: '₹',
       billingCycle: 'monthly',
       status: 'Active',
@@ -1661,7 +1661,7 @@ class StorageService {
     };
     this.saveSettings(settings);
 
-    // Automatically increase subscription active pumps count and plus ₹999/mo!
+    // Automatically calculate subscription active pumps count and plus ₹499/mo!
     const sub = this.getSubscription();
     const newCount = updated.length;
     sub.registeredPumpId = newPump.id;
@@ -1669,7 +1669,9 @@ class StorageService {
     sub.ownerName = newPump.ownerName;
     sub.ownerMobile = newPump.ownerPhone;
     sub.activePumpsCount = newCount;
-    sub.totalMonthlyAmount = newCount * sub.pricePerPumpMonthly; // Each additional pump adds ₹999!
+    sub.pricePerPumpMonthly = 499;
+    sub.pricePerPumpAnnual = 4990;
+    sub.totalMonthlyAmount = newCount * 499; // Each additional pump adds ₹499!
     sub.totalAnnualAmount = newCount * sub.pricePerPumpAnnual;
     if (!sub.licensedPumpIds.includes(newPump.id)) {
       sub.licensedPumpIds.push(newPump.id);
@@ -1708,22 +1710,11 @@ class StorageService {
     this.saveSubscription(sub);
   }
 
-  // Setup / First-Time Registration Status
+  // Setup / First-Time Registration Status ("aru prothom registration panel ahibo lage registration pisot he pump r owner bore nijor desbord dekha pabo lage")
   isSetupCompleted(): boolean {
     try {
       const val = localStorage.getItem(STORAGE_KEYS.SETUP_COMPLETED);
-      if (val === 'true') return true;
-      if (val === 'false') return false;
-
-      // Check if user has already customized or registered a pump
-      const storedPumps = localStorage.getItem(STORAGE_KEYS.REGISTERED_PUMPS);
-      if (storedPumps) {
-        const parsed = JSON.parse(storedPumps);
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(p => p.isActive && p.stationName && p.roCode)) {
-          return true;
-        }
-      }
-      return false;
+      return val === 'true';
     } catch {
       return false;
     }
