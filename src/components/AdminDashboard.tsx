@@ -20,6 +20,9 @@ import {
   FileText,
   Lock,
   Unlock,
+  KeyRound,
+  Eye,
+  EyeOff,
   Layers,
   ChevronRight,
   Terminal,
@@ -64,7 +67,110 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [dbStatus, setDbStatus] = useState<any>(null);
   const [migrationLog, setMigrationLog] = useState<{ status: string; message: string; tables?: string[] } | null>(null);
   const [isMigrating, setIsMigrating] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'stations' | 'monthly-analytics' | 'neon-migration'>('overview');
+  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'stations' | 'monthly-analytics' | 'neon-migration' | 'master-security'>('overview');
+
+  // Master Admin Authentication & Security System ("JATE MOR BAHIRE KONEO KHULIBO NUARE")
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => storage.isMasterAdminUnlocked());
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
+  // Password Change state
+  const [currentPwdInput, setCurrentPwdInput] = useState('');
+  const [newPwdInput, setNewPwdInput] = useState('');
+  const [confirmPwdInput, setConfirmPwdInput] = useState('');
+  const [pwdChangeSuccess, setPwdChangeSuccess] = useState('');
+  const [pwdChangeError, setPwdChangeError] = useState('');
+  const [showPwdFields, setShowPwdFields] = useState(false);
+
+  // Recovery modal state
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [recoveryCodeInput, setRecoveryCodeInput] = useState('');
+  const [recoveryNewPwdInput, setRecoveryNewPwdInput] = useState('');
+  const [recoveryError, setRecoveryError] = useState('');
+  const [recoverySuccess, setRecoverySuccess] = useState('');
+
+  const handleUnlockAdmin = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setLoginError('');
+    if (!adminPasswordInput.trim()) {
+      setLoginError('অনুগ্ৰহ কৰি পাছৱৰ্ড লিখক (Please enter password)');
+      return;
+    }
+    if (storage.verifyMasterAdminPassword(adminPasswordInput)) {
+      storage.setMasterAdminUnlocked(true);
+      setIsUnlocked(true);
+      setAdminPasswordInput('');
+      setLoginError('');
+    } else {
+      setLoginError('ভুল পাছৱৰ্ড! আপোনাৰ বাহিৰে আন কোনেও প্ৰৱেশ কৰিব নোৱাৰে।');
+    }
+  };
+
+  const handleLockAdmin = () => {
+    storage.lockMasterAdmin();
+    setIsUnlocked(false);
+    setAdminPasswordInput('');
+    setLoginError('');
+    setPwdChangeSuccess('');
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwdChangeError('');
+    setPwdChangeSuccess('');
+
+    if (!currentPwdInput.trim()) {
+      setPwdChangeError('বৰ্তমানৰ পাছৱৰ্ড লিখক (Enter current password)');
+      return;
+    }
+    if (!storage.verifyMasterAdminPassword(currentPwdInput)) {
+      setPwdChangeError('বৰ্তমানৰ পাছৱৰ্ড ভুল হৈছে (Current password is incorrect)');
+      return;
+    }
+    if (!newPwdInput.trim()) {
+      setPwdChangeError('নতুন পাছৱৰ্ড লিখক (Enter new password)');
+      return;
+    }
+    if (newPwdInput.trim().length < 4) {
+      setPwdChangeError('পাছৱৰ্ড কমেও ৪টা আখৰৰ হ’ব লাগিব (Minimum 4 characters)');
+      return;
+    }
+    if (newPwdInput !== confirmPwdInput) {
+      setPwdChangeError('নতুন পাছৱৰ্ড দুয়োবাৰ একে হোৱা নাই (Passwords do not match)');
+      return;
+    }
+
+    storage.setMasterAdminPassword(newPwdInput.trim());
+    setCurrentPwdInput('');
+    setNewPwdInput('');
+    setConfirmPwdInput('');
+    setPwdChangeSuccess('মাস্টাৰ এডমিন পাছৱৰ্ড সফলভাৱে সলনি হ’ল! এতিয়াৰ পৰা কেৱল এই নতুন পাছৱৰ্ডেৰেহে খোল খাব।');
+  };
+
+  const handleRecoveryReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    setRecoveryError('');
+    setRecoverySuccess('');
+    if (!recoveryCodeInput.trim()) {
+      setRecoveryError('RO Code বা মোবাইল নম্বৰ লিখক');
+      return;
+    }
+    if (!recoveryNewPwdInput.trim() || recoveryNewPwdInput.trim().length < 4) {
+      setRecoveryError('নতুন পাছৱৰ্ড কমেও ৪টা আখৰৰ হ’ব লাগিব');
+      return;
+    }
+    const success = storage.resetMasterAdminPasswordWithVerification(recoveryCodeInput, recoveryNewPwdInput.trim());
+    if (success) {
+      setRecoverySuccess('পাছৱৰ্ড সফলভাৱে ৰিছেট হ’ল আৰু পেনেল আনলক কৰা হ’ল!');
+      setTimeout(() => {
+        setIsUnlocked(true);
+        setShowRecoveryModal(false);
+      }, 1000);
+    } else {
+      setRecoveryError('RO Code বা ফোন নম্বৰ মিলা নাই! পঞ্জীয়ন কৰা তথ্য সঠিককৈ লিখক।');
+    }
+  };
 
   // Load Neon DB status
   const checkDbStatus = useCallback(async () => {
@@ -207,6 +313,194 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return matchesSearch && matchesCompany && matchesStatus;
   });
 
+  // Master Admin Password Security Gate ("MASTER ADMIN PANEL PASWORD SYSTEM KORI DIYOK JATE MOR BAHIRE KONEO KHULIBO NUARE")
+  if (!isUnlocked) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center p-3 sm:p-6">
+        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden space-y-6">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="text-center space-y-2 relative z-10">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400 shadow-lg">
+              <Lock className="w-8 h-8" />
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-black tracking-wide">
+              <span>অননুমোদিত প্ৰৱেশ নিষেধ • Restricted Access</span>
+            </div>
+            <h2 className="text-2xl font-black text-white tracking-tight">
+              Master Admin Security Gate
+            </h2>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+              সৰ্বমুঠ পাম্পৰ সংখ্যা, লাইভ Neon DB মেট্ৰিক্স আৰু মাহিলী লেনদেন কেৱল প্ৰপ্ৰাইটাৰ / মূল এডমিনে চাব পাৰিব। প্ৰৱেশ কৰিবলৈ পাছৱৰ্ড লিখক।
+            </p>
+          </div>
+
+          <form onSubmit={handleUnlockAdmin} className="space-y-4 relative z-10">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                <span>মাস্টাৰ এডমিন পাছৱৰ্ড (Master Password)</span>
+                {storage.isMasterAdminPasswordCustomized() ? (
+                  <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                    গোপন পাছৱৰ্ড সক্ৰিয়
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md">
+                    ডিফল্ট পাছৱৰ্ড
+                  </span>
+                )}
+              </label>
+              <div className="relative">
+                <input
+                  type={showAdminPassword ? 'text' : 'password'}
+                  value={adminPasswordInput}
+                  onChange={(e) => setAdminPasswordInput(e.target.value)}
+                  placeholder="পাছৱৰ্ড প্ৰবিষ্ট কৰক..."
+                  autoFocus
+                  className="w-full bg-slate-950 border border-slate-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 rounded-xl px-4 py-3 text-sm text-white font-mono placeholder:text-slate-600 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAdminPassword(!showAdminPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition p-1 cursor-pointer"
+                  title={showAdminPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {loginError && (
+              <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-semibold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{loginError}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-extrabold text-sm shadow-lg shadow-orange-500/25 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2"
+            >
+              <Unlock className="w-4 h-4" />
+              <span>প্ৰৱেশ কৰক (Unlock Admin Panel)</span>
+            </button>
+
+            {!storage.isMasterAdminPasswordCustomized() && (
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold">প্ৰথমবাৰৰ ডিফল্ট পাছৱৰ্ড:</span>
+                  <code className="bg-black/40 px-2 py-0.5 rounded text-amber-200 font-mono text-[11px]">
+                    pumptally@master
+                  </code>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdminPasswordInput('pumptally@master');
+                    setLoginError('');
+                  }}
+                  className="text-left text-[11px] text-amber-400 hover:text-amber-200 underline cursor-pointer"
+                >
+                  Click to auto-fill default password
+                </button>
+                <p className="text-[10px] text-slate-400 leading-normal">
+                  প্ৰৱেশ কৰাৰ পাছত আপুনি <strong>পাছৱৰ্ড সলনি কৰক</strong> অপশ্বনৰ পৰা নিজৰ ব্যক্তিগত গোপন পাছৱৰ্ড ছেভ কৰিব পাৰিব যাতে আপোনাৰ অনুমতি অবিহনে কেতিয়াও কোনেও খোলিব নোৱাৰে।
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400">
+              <button
+                type="button"
+                onClick={() => setShowRecoveryModal(true)}
+                className="hover:text-orange-400 transition underline cursor-pointer flex items-center gap-1"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-orange-400" />
+                <span>পাছৱৰ্ড পাহৰিছে? (Recovery)</span>
+              </button>
+              {onReopenRegistration && (
+                <button
+                  type="button"
+                  onClick={onReopenRegistration}
+                  className="hover:text-slate-200 transition cursor-pointer"
+                >
+                  ← ওলাই যাওক (Exit)
+                </button>
+              )}
+            </div>
+          </form>
+
+          {/* Recovery Modal */}
+          {showRecoveryModal && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <h3 className="font-black text-white text-base flex items-center gap-2">
+                    <KeyRound className="w-5 h-5 text-orange-400" />
+                    <span>Master Password Recovery</span>
+                  </h3>
+                  <button
+                    onClick={() => setShowRecoveryModal(false)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-white"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className="text-xs text-slate-300">
+                  আপোনাৰ পঞ্জীয়ন কৰা পেট্ৰ’ল পাম্পৰ RO Code অথবা মোবাইল নম্বৰ দি নতুন পাছৱৰ্ড নিৰ্ধাৰণ কৰক:
+                </p>
+                <form onSubmit={handleRecoveryReset} className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">RO Code বা মবাইল নম্বৰ:</label>
+                    <input
+                      type="text"
+                      value={recoveryCodeInput}
+                      onChange={(e) => setRecoveryCodeInput(e.target.value)}
+                      placeholder="e.g. IOCL-RO-44219 বা 9820044555"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">নতুন পাছৱৰ্ড (New Master Password):</label>
+                    <input
+                      type="password"
+                      value={recoveryNewPwdInput}
+                      onChange={(e) => setRecoveryNewPwdInput(e.target.value)}
+                      placeholder="নতুন গোপন পাছৱৰ্ড..."
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                    />
+                  </div>
+
+                  {recoveryError && (
+                    <div className="p-2.5 rounded-lg bg-rose-500/20 text-rose-300 text-xs">{recoveryError}</div>
+                  )}
+                  {recoverySuccess && (
+                    <div className="p-2.5 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs">{recoverySuccess}</div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowRecoveryModal(false)}
+                      className="px-3 py-2 rounded-xl bg-slate-800 text-xs text-slate-300 cursor-pointer"
+                    >
+                      বাতিল (Cancel)
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs cursor-pointer"
+                    >
+                      পাছৱৰ্ড সলনি কৰি আনলক কৰক
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-16">
       {/* Top Banner & Status Header */}
@@ -292,6 +586,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             >
               <RefreshCw className="w-4 h-4" />
               <span>Refresh Metrics</span>
+            </button>
+
+            {/* Master Admin Security Actions */}
+            <button
+              onClick={() => setActiveSubTab('master-security')}
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold transition cursor-pointer active:scale-95"
+              title="Change Master Admin Password"
+            >
+              <KeyRound className="w-4 h-4 text-amber-400" />
+              <span>পাছৱৰ্ড সলনি</span>
+            </button>
+
+            <button
+              onClick={handleLockAdmin}
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 text-xs font-black transition cursor-pointer active:scale-95 shadow-sm"
+              title="Lock Master Admin (পেনেল লক কৰক)"
+            >
+              <Lock className="w-4 h-4 text-rose-400" />
+              <span>লক কৰক (Lock)</span>
             </button>
           </div>
         </div>
@@ -449,6 +762,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         >
           <Database className="w-3.5 h-3.5" />
           <span>Neon Database & Terminal Guide</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('master-security')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            activeSubTab === 'master-security'
+              ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+              : 'bg-slate-800 text-slate-400 hover:text-white'
+          }`}
+        >
+          <Lock className="w-3.5 h-3.5 text-amber-400" />
+          <span>Master Password & Security (পাছৱৰ্ড সুৰক্ষা)</span>
         </button>
       </div>
 
@@ -763,6 +1088,146 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <Terminal className="w-4 h-4" />
                 <span>{isMigrating ? 'Creating Tables in Neon DB...' : 'Create Tables & Migrate Database Now'}</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUBTAB 4: MASTER PASSWORD & ACCESS CONTROL */}
+      {activeSubTab === 'master-security' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-400">
+                  <KeyRound className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">
+                    Master Admin Password & Access Control
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    পাছৱৰ্ড সলনি কৰক যাতে আপোনাৰ বাহিৰে আন কোনেও Master Admin Panel খোলিব নোৱাৰে।
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Password Protection Active</span>
+                </span>
+                <button
+                  onClick={handleLockAdmin}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-black transition cursor-pointer"
+                >
+                  <Lock className="w-3.5 h-3.5 text-rose-400" />
+                  <span>এতিয়াই লক কৰক (Lock Now)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Change Password Form */}
+            <form onSubmit={handleChangePassword} className="max-w-xl space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300">
+                  বৰ্তমানৰ পাছৱৰ্ড (Current Master Password):
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPwdFields ? 'text' : 'password'}
+                    value={currentPwdInput}
+                    onChange={(e) => setCurrentPwdInput(e.target.value)}
+                    placeholder="বর্তমানৰ পাছৱৰ্ড দিয়ক..."
+                    className="w-full bg-slate-950 border border-slate-700 focus:border-orange-500 rounded-xl px-4 py-2.5 text-sm text-white font-mono placeholder:text-slate-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPwdFields(!showPwdFields)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+                  >
+                    {showPwdFields ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300">
+                  নতুন গোপন পাছৱৰ্ড (New Master Password):
+                </label>
+                <input
+                  type={showPwdFields ? 'text' : 'password'}
+                  value={newPwdInput}
+                  onChange={(e) => setNewPwdInput(e.target.value)}
+                  placeholder="আপোনাৰ নতুন গোপন পাছৱৰ্ড (e.g. secret@2025)..."
+                  className="w-full bg-slate-950 border border-slate-700 focus:border-orange-500 rounded-xl px-4 py-2.5 text-sm text-white font-mono placeholder:text-slate-600"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300">
+                  নতুন পাছৱৰ্ড পুনৰ লিখক (Confirm New Password):
+                </label>
+                <input
+                  type={showPwdFields ? 'text' : 'password'}
+                  value={confirmPwdInput}
+                  onChange={(e) => setConfirmPwdInput(e.target.value)}
+                  placeholder="নতুন পাছৱৰ্ড পুনৰ নিশ্চিত কৰক..."
+                  className="w-full bg-slate-950 border border-slate-700 focus:border-orange-500 rounded-xl px-4 py-2.5 text-sm text-white font-mono placeholder:text-slate-600"
+                />
+              </div>
+
+              {pwdChangeError && (
+                <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-bold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>{pwdChangeError}</span>
+                </div>
+              )}
+
+              {pwdChangeSuccess && (
+                <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{pwdChangeSuccess}</span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="submit"
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-extrabold text-xs shadow-lg shadow-orange-500/25 active:scale-95 transition cursor-pointer flex items-center gap-2"
+                >
+                  <KeyRound className="w-4 h-4" />
+                  <span>নতুন পাছৱৰ্ড ছেভ কৰক (Save Password)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleLockAdmin}
+                  className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition cursor-pointer flex items-center gap-2"
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>লক কৰি টেষ্ট কৰক (Test Lock)</span>
+                </button>
+              </div>
+            </form>
+
+            {/* Security Explanation Box in Assamese & English */}
+            <div className="mt-6 p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+              <div className="font-bold text-white flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>মাস্টাৰ এডমিন সুৰক্ষা নীতি (Security Policy):</span>
+              </div>
+              <ul className="list-disc list-inside space-y-1.5 text-slate-400 leading-relaxed">
+                <li>
+                  <strong className="text-slate-200">ব্যক্তিগত প্ৰৱেশাধিকাৰ:</strong> এই পাছৱৰ্ড কেৱল প্ৰপ্ৰাইটাৰ বা মুখ্য সঞ্চালকৰ বাবে। সাধাৰণ কৰ্মচাৰীয়ে নিজৰ ডেশ্ব’ৰ্ড বা নজেল ৰিডিংহে চাব পাৰিব, Master Admin খুলিব নোৱাৰে।
+                </li>
+                <li>
+                  <strong className="text-slate-200">স্বয়ংক্ৰিয় অধিবেশন সুৰক্ষা:</strong> ব্ৰাউজাৰ বন্ধ কৰিলে বা লক বুটামত টিপিলে পেনেলটো তৎক্ষণাত লক হৈ পৰে।
+                </li>
+                <li>
+                  <strong className="text-slate-200">জরুৰীকালীন ৰিকভাৰী (Recovery):</strong> কেতিয়াবা পাছৱৰ্ড পাহৰি গ’লে পঞ্জীয়ন কৰা RO Code বা মবাইল নম্বৰৰ দ্বাৰা ৰিছেট কৰিব পাৰি।
+                </li>
+              </ul>
             </div>
           </div>
         </div>

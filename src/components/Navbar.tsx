@@ -358,11 +358,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Master Admin Panel Button */}
           <button
             onClick={() => onNavigate('admin')}
-            className="hidden lg:flex items-center gap-1.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-200 transition shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 border border-emerald-500/60 hover:border-emerald-400 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-black text-emerald-300 transition shadow-md shadow-emerald-500/10 cursor-pointer active:scale-95"
             title="Open Master Admin Panel (সৰ্বমুঠ পাম্প আৰু মাহিলী ডাটা)"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Admin</span>
+            <span className="hidden sm:inline">Master Admin (এডমিন)</span>
+            <span className="sm:hidden font-bold">Admin</span>
           </button>
 
           {/* Audit & Accounts Verification Guide Button */}

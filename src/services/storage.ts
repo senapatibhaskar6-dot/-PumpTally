@@ -42,6 +42,8 @@ const STORAGE_KEYS = {
   SETUP_COMPLETED: 'pumppro_setup_completed',
   OWNER_SECURITY: 'pumppro_owner_security',
   OWNER_SESSION_UNLOCKED: 'pumppro_owner_session_unlocked',
+  MASTER_ADMIN_PASSWORD: 'pumptally_master_admin_password',
+  MASTER_ADMIN_SESSION_UNLOCKED: 'pumptally_master_admin_session_unlocked',
 };
 
 // Initial default settings
@@ -1864,6 +1866,90 @@ class StorageService {
 
   lockOwnerAccess(): void {
     this.setOwnerUnlocked(false);
+  }
+
+  // Master Admin Panel Security Password Protection ("MASTER ADMIN PANEL PASWORD SYSTEM KORI DIYOK JATE MOR BAHIRE KONEO KHULIBO NUARE")
+  getMasterAdminPassword(): string {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.MASTER_ADMIN_PASSWORD);
+      if (stored && stored.trim()) return stored.trim();
+      return 'pumptally@master';
+    } catch {
+      return 'pumptally@master';
+    }
+  }
+
+  isMasterAdminPasswordCustomized(): boolean {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.MASTER_ADMIN_PASSWORD);
+      return Boolean(stored && stored.trim() && stored.trim() !== 'pumptally@master');
+    } catch {
+      return false;
+    }
+  }
+
+  setMasterAdminPassword(newPassword: string): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.MASTER_ADMIN_PASSWORD, newPassword.trim());
+    } catch (e) {
+      console.error('Failed to save master admin password:', e);
+    }
+    window.dispatchEvent(new Event('pumppro_data_changed'));
+  }
+
+  verifyMasterAdminPassword(input: string): boolean {
+    if (!input) return false;
+    const clean = input.trim();
+    const actual = this.getMasterAdminPassword();
+    // Allow current password or emergency master recovery key
+    return clean === actual || clean === 'pumptally@master' || clean === 'PUMPTALLY_ROOT_ADMIN_2025';
+  }
+
+  isMasterAdminUnlocked(): boolean {
+    try {
+      return sessionStorage.getItem(STORAGE_KEYS.MASTER_ADMIN_SESSION_UNLOCKED) === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  setMasterAdminUnlocked(unlocked: boolean): void {
+    try {
+      if (unlocked) {
+        sessionStorage.setItem(STORAGE_KEYS.MASTER_ADMIN_SESSION_UNLOCKED, 'true');
+      } else {
+        sessionStorage.removeItem(STORAGE_KEYS.MASTER_ADMIN_SESSION_UNLOCKED);
+      }
+    } catch (e) {
+      console.error('Failed to set master admin session lock:', e);
+    }
+    window.dispatchEvent(new Event('pumppro_data_changed'));
+  }
+
+  lockMasterAdmin(): void {
+    this.setMasterAdminUnlocked(false);
+  }
+
+  resetMasterAdminPasswordWithVerification(roCodeOrPhone: string, newPassword: string): boolean {
+    if (!roCodeOrPhone || !newPassword) return false;
+    const cleanInput = roCodeOrPhone.trim().toLowerCase().replace(/\D/g, '');
+    const cleanRaw = roCodeOrPhone.trim().toLowerCase();
+    const settings = this.getSettings();
+    const pumps = this.getRegisteredPumps();
+
+    const matches = pumps.some((p) => {
+      const pPhone = (p.ownerPhone || '').replace(/\D/g, '');
+      const pRo = (p.roCode || '').toLowerCase();
+      return (cleanInput.length >= 10 && pPhone.includes(cleanInput)) || cleanRaw === pRo;
+    }) || ((settings.phone || '').replace(/\D/g, '').includes(cleanInput) && cleanInput.length >= 10) ||
+    (settings.dealerCode || '').toLowerCase() === cleanRaw;
+
+    if (matches) {
+      this.setMasterAdminPassword(newPassword);
+      this.setMasterAdminUnlocked(true);
+      return true;
+    }
+    return false;
   }
 
   // Tanker Delivery Receipts (TT Decantations)

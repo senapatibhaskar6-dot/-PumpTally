@@ -32,10 +32,12 @@ import { storage } from '../services/storage';
 
 interface StationRegistrationScreenProps {
   onCompleteRegistration: (pump: RegisteredPump) => void;
+  onOpenAdminPanel?: () => void;
 }
 
 export const StationRegistrationScreen: React.FC<StationRegistrationScreenProps> = ({
   onCompleteRegistration,
+  onOpenAdminPanel,
 }) => {
   // Form State
   const [stationName, setStationName] = useState('');
@@ -280,6 +282,41 @@ export const StationRegistrationScreen: React.FC<StationRegistrationScreenProps>
       <div className="fixed bottom-0 right-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
       <div className="w-full max-w-3xl space-y-5">
+        {/* Admin Panel Quick Access Banner */}
+        {onOpenAdminPanel && (
+          <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-slate-900 to-sky-500/20 border-2 border-emerald-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs sm:text-sm font-black text-white">
+                    Master Admin Panel (মাস্টাৰ এডমিন পেনেল)
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] bg-emerald-500 text-slate-950 font-black uppercase">
+                    Admin
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold">
+                    🔒 পাছৱৰ্ড সুৰক্ষিত
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  সৰ্বমুঠ পাম্পৰ সংখ্যা, লাইভ Neon DB মেট্ৰিক্স আৰু মাহিলী ডাটা চাবলৈ ইয়াত ক্লিক কৰক (কেৱল মূল এডমিনে পাছৱৰ্ড দি খোলিব পাৰিব)।
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenAdminPanel}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-xs shadow-lg shadow-emerald-500/20 active:scale-95 transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Admin Panel খোলক →</span>
+            </button>
+          </div>
+        )}
+
         {/* Brand Header & Logo */}
         <div className="text-center space-y-2">
           <div className="flex justify-center items-center">

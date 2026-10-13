@@ -91,6 +91,7 @@ export default function App() {
   const [registeredPumps, setRegisteredPumps] = useState<RegisteredPump[]>(storage.getRegisteredPumps());
   const [isRegistered, setIsRegistered] = useState<boolean>(() => storage.isSetupCompleted());
   const [isSubActive, setIsSubActive] = useState<boolean>(() => storage.isSubscriptionActive());
+  const [isAdminViewFromGate, setIsAdminViewFromGate] = useState<boolean>(false);
 
   // Modals
   const [showSubscriptionModal, setShowSubscriptionModal] = useState<boolean>(false);
@@ -141,8 +142,42 @@ export default function App() {
 
   // First-Time Station Setup / Registration Gate
   if (!isRegistered) {
+    if (isAdminViewFromGate) {
+      return (
+        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col p-3 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto w-full space-y-4">
+            <div className="flex items-center justify-between p-3.5 bg-slate-900 border border-slate-800 rounded-2xl shadow-lg">
+              <button
+                onClick={() => setIsAdminViewFromGate(false)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/40 text-xs font-black transition cursor-pointer"
+              >
+                ← Back to Registration (পঞ্জীয়নলৈ উভতি যাওক)
+              </button>
+              <span className="text-xs text-slate-400 font-mono">
+                PumpTally Master Admin View (প্ৰতিষ্ঠান আৰু পৰিসংখ্যা)
+              </span>
+            </div>
+            <AdminDashboard
+              registeredPumps={registeredPumps}
+              settings={settings}
+              onRefreshData={refreshData}
+              onNavigateToPump={(pumpId) => {
+                storage.switchActivePump(pumpId);
+                storage.setSetupCompleted(true);
+                setIsRegistered(true);
+                setIsAdminViewFromGate(false);
+                setCurrentTab('dashboard');
+              }}
+              onReopenRegistration={() => setIsAdminViewFromGate(false)}
+            />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <StationRegistrationScreen
+        onOpenAdminPanel={() => setIsAdminViewFromGate(true)}
         onCompleteRegistration={(_newPump) => {
           refreshData();
           setIsRegistered(true);
